@@ -685,7 +685,7 @@ def silenceRemoval(x, Fs, stWin, stStep, smoothWindow=0.5, Weight=0.5, plot=Fals
     return segmentLimits
 
 
-def speakerDiarization(fileName, numOfSpeakers, mtSize=2.0, mtStep=0.2, stWin=0.05, LDAdim=35, PLOT=False):
+def speakerDiarization(fileName, numOfSpeakers, mtSize=2.0, mtStep=0.2, stWin=0.05, LDAdim=35, PLOT=False, CSVFile=None):
     '''
     ARGUMENTS:
         - fileName:        the name of the WAV file to be analyzed
@@ -915,6 +915,14 @@ def speakerDiarization(fileName, numOfSpeakers, mtSize=2.0, mtStep=0.2, stWin=0.
             plt.xlabel("number of clusters");
             plt.ylabel("average clustering's sillouette");
         plt.show()
+    
+    # print cls
+    if CSVFile:
+        with open(CSVFile, "wb") as csvfile:
+            writer = csv.writer(csvfile)
+            curTimestamp = 0
+            for i, val in enumerate(cls):
+                writer.writerow([i*mtStep, val])
     return cls
     
 def speakerDiarizationEvaluateScript(folderName, LDAs):

@@ -225,11 +225,11 @@ def silenceRemovalWrapper(inputFile, smoothingWindow, weight):
         wavfile.write(strOut, Fs, x[int(Fs * s[0]):int(Fs * s[1])])
 
 
-def speakerDiarizationWrapper(inputFile, numSpeakers, useLDA):
+def speakerDiarizationWrapper(inputFile, numSpeakers, useLDA, outputFile):
     if useLDA:
-        aS.speakerDiarization(inputFile, numSpeakers, PLOT=True)
+        aS.speakerDiarization(inputFile, numSpeakers, PLOT=False, CSVFile=outputFile)
     else:
-        aS.speakerDiarization(inputFile, numSpeakers, LDAdim=0, PLOT=True)
+        aS.speakerDiarization(inputFile, numSpeakers, LDAdim=0, PLOT=False, CSVFile=outputFile)
 
 
 def thumbnailWrapper(inputFile, thumbnailWrapperSize):
@@ -511,6 +511,8 @@ def parse_arguments():
                          help="Number of speakers")
     spkrDir.add_argument("--flsd", action="store_true",
                          help="Enable FLsD method")
+    spkrDir.add_argument("-o", "--output", required=False, 
+                         help="Output CSV file")
 
     speakerDiarizationScriptEval = tasks.add_parser("speakerDiarizationScriptEval",
                                                     help="Train an SVM or KNN "
@@ -618,7 +620,7 @@ if __name__ == "__main__":
         silenceRemovalWrapper(args.input, args.smoothing, args.weight)
     elif args.task == "speakerDiarization":
         # Perform speaker diarization on a WAV file
-        speakerDiarizationWrapper(args.input, args.num, args.flsd)
+        speakerDiarizationWrapper(args.input, args.num, args.flsd, args.output)
     elif args.task == "speakerDiarizationScriptEval":
         # Evaluate speaker diarization given a folder that contains
         # WAV files and .segment (Groundtruth files)
