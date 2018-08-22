@@ -224,6 +224,17 @@ def silenceRemovalWrapper(inputFile, smoothingWindow, weight):
         strOut = "{0:s}_{1:.3f}-{2:.3f}.wav".format(inputFile[0:-4], s[0], s[1])
         wavfile.write(strOut, Fs, x[int(Fs * s[0]):int(Fs * s[1])])
 
+def silenceDetectWrapper(inputFile, smoothingWindow, weight):
+    if not os.path.isfile(inputFile):
+        raise Exception("Input audio file not found!")
+
+    [Fs, x] = audioBasicIO.readAudioFile(inputFile)
+    segmentLimits = aS.silenceRemoval(x, Fs, 0.05, 0.05,
+                                      smoothingWindow, weight, False)
+    for i, s in enumerate(segmentLimits):
+        strOut = "{1:.3f}-{2:.3f}".format(inputFile[0:-4], s[0], s[1])
+        print strOut
+
 
 def speakerDiarizationWrapper(inputFile, numSpeakers, useLDA, outputFile):
     if useLDA:
@@ -504,6 +515,14 @@ def parse_arguments():
     silrem.add_argument("-w", "--weight", type=float, default=0.5,
                         help="weight factor in (0, 1)")
 
+    sildet = tasks.add_parser("silenceDetect",
+                              help="Detect silence segments of a recording")
+    sildet.add_argument("-i", "--input", required=True, help="input audio file")
+    sildet.add_argument("-s", "--smoothing", type=float, default=1.0,
+                        help="smoothing window size in seconds.")
+    sildet.add_argument("-w", "--weight", type=float, default=0.5,
+                        help="weight factor in (0, 1)")
+
     spkrDir = tasks.add_parser("speakerDiarization")
     spkrDir.add_argument("-i", "--input", required=True,
                          help="Input audio file")
@@ -618,6 +637,9 @@ if __name__ == "__main__":
         # Detect non-silent segments in a WAV file and
         # output to seperate WAV files
         silenceRemovalWrapper(args.input, args.smoothing, args.weight)
+    elif args.task == "silenceDetect":
+        # Detect and print non-silent segments in a WAV file
+        silenceDetectWrapper(args.input, args.smoothing, args.weight)
     elif args.task == "speakerDiarization":
         # Perform speaker diarization on a WAV file
         speakerDiarizationWrapper(args.input, args.num, args.flsd, args.output)

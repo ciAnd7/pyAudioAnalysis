@@ -609,10 +609,12 @@ def silenceRemoval(x, Fs, stWin, stStep, smoothWindow=0.5, Weight=0.5, plot=Fals
         Weight = 0.01
 
     # Step 1: feature extraction
+    print "step 1"
     x = audioBasicIO.stereo2mono(x)                        # convert to mono
     ShortTermFeatures = aF.stFeatureExtraction(x, Fs, stWin * Fs, stStep * Fs)        # extract short-term features
 
     # Step 2: train binary SVM classifier of low vs high energy frames
+    print "step 2"
     EnergySt = ShortTermFeatures[1, :]                  # keep only the energy short-term sequence (2nd feature)
     E = numpy.sort(EnergySt)                            # sort the energy feature values:
     L1 = int(len(E) / 10)                               # number of 10% of the total short-term windows
@@ -626,6 +628,7 @@ def silenceRemoval(x, Fs, stWin, stStep, smoothWindow=0.5, Weight=0.5, plot=Fals
     SVM = aT.trainSVM(featuresNormSS, 1.0)                               # train the respective SVM probabilistic model (ONSET vs SILENCE)
 
     # Step 3: compute onset probability based on the trained SVM
+    print "step 3"
     ProbOnset = []
     for i in range(ShortTermFeatures.shape[1]):                    # for each frame
         curFV = (ShortTermFeatures[:, i] - MEANSS) / STDSS         # normalize feature vector
@@ -634,6 +637,7 @@ def silenceRemoval(x, Fs, stWin, stStep, smoothWindow=0.5, Weight=0.5, plot=Fals
     ProbOnset = smoothMovingAvg(ProbOnset, smoothWindow / stStep)  # smooth probability
 
     # Step 4A: detect onset frame indices:
+    print "step 4a"
     ProbOnsetSorted = numpy.sort(ProbOnset)                        # find probability Threshold as a weighted average of top 10% and lower 10% of the values
     Nt = ProbOnsetSorted.shape[0] / 10
     T = (numpy.mean((1 - Weight) * ProbOnsetSorted[0:Nt]) + Weight * numpy.mean(ProbOnsetSorted[-Nt::]))
@@ -644,6 +648,7 @@ def silenceRemoval(x, Fs, stWin, stStep, smoothWindow=0.5, Weight=0.5, plot=Fals
     segmentLimits = []
 
     # Step 4B: group frame indices to onset segments
+    print "step 4b"
     while i < len(MaxIdx):                                         # for each of the detected onset indices
         curCluster = [MaxIdx[i]]
         if i == len(MaxIdx)-1:
@@ -658,6 +663,7 @@ def silenceRemoval(x, Fs, stWin, stStep, smoothWindow=0.5, Weight=0.5, plot=Fals
         segmentLimits.append([curCluster[0] * stStep, curCluster[-1] * stStep])
 
     # Step 5: Post process: remove very small segments:
+    print "step 5"
     minDuration = 0.2
     segmentLimits2 = []
     for s in segmentLimits:
@@ -682,6 +688,7 @@ def silenceRemoval(x, Fs, stWin, stStep, smoothWindow=0.5, Weight=0.5, plot=Fals
         plt.title('SVM Probability')
         plt.show()
 
+    print "step complete"
     return segmentLimits
 
 
