@@ -11,6 +11,7 @@ import audioVisualization as aV
 import audioBasicIO
 import scipy.io.wavfile as wavfile
 import matplotlib.patches
+import csv
 
 
 def dirMp3toWavWrapper(directory, samplerate, channels):
@@ -224,16 +225,22 @@ def silenceRemovalWrapper(inputFile, smoothingWindow, weight):
         strOut = "{0:s}_{1:.3f}-{2:.3f}.wav".format(inputFile[0:-4], s[0], s[1])
         wavfile.write(strOut, Fs, x[int(Fs * s[0]):int(Fs * s[1])])
 
-def silenceDetectWrapper(inputFile, smoothingWindow, weight):
+def silenceDetectWrapper(inputFile, smoothingWindow, weight, outputFile):
     if not os.path.isfile(inputFile):
         raise Exception("Input audio file not found!")
 
     [Fs, x] = audioBasicIO.readAudioFile(inputFile)
     segmentLimits = aS.silenceRemoval(x, Fs, 0.05, 0.05,
                                       smoothingWindow, weight, False)
-    for i, s in enumerate(segmentLimits):
-        strOut = "{1:.3f}-{2:.3f}".format(inputFile[0:-4], s[0], s[1])
-        print strOut
+    if outputFile:
+        with open(outputFile, "wb") as csvfile:
+            writer = csv.writer(csvfile)
+            for i, s in enumerate(segmentLimits):
+                writer.writerow([s[0], s[1]])
+    else:   
+        for i, s in enumerate(segmentLimits):
+            strOut = "{1:.3f}-{2:.3f}".format(inputFile[0:-4], s[0], s[1])
+            print strOut
 
 
 def speakerDiarizationWrapper(inputFile, numSpeakers, useLDA, outputFile):
@@ -522,6 +529,8 @@ def parse_arguments():
                         help="smoothing window size in seconds.")
     sildet.add_argument("-w", "--weight", type=float, default=0.5,
                         help="weight factor in (0, 1)")
+    sildet.add_argument("-o", "--output", required=False, 
+                         help="Output CSV file")
 
     spkrDir = tasks.add_parser("speakerDiarization")
     spkrDir.add_argument("-i", "--input", required=True,
@@ -639,7 +648,7 @@ if __name__ == "__main__":
         silenceRemovalWrapper(args.input, args.smoothing, args.weight)
     elif args.task == "silenceDetect":
         # Detect and print non-silent segments in a WAV file
-        silenceDetectWrapper(args.input, args.smoothing, args.weight)
+        silenceDetectWrapper(args.input, args.smoothing, args.weight, args.output)
     elif args.task == "speakerDiarization":
         # Perform speaker diarization on a WAV file
         speakerDiarizationWrapper(args.input, args.num, args.flsd, args.output)
